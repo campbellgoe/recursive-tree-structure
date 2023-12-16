@@ -7,7 +7,7 @@ interface KeyValue {
   value: string;
 }
 
-interface TreeNode {
+export interface TreeNode {
   id: string;
   name: string;
   children?: TreeNode[];
@@ -43,6 +43,48 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
     localStorage.setItem('treeData'+id, JSON.stringify(tree));
   }, [tree]);
 
+  const handleDrop = (draggedNodeId: string, targetNodeId: string, setTree: React.Dispatch<React.SetStateAction<TreeNode[]>>) => {
+    setTree(prevTree => {
+      // Create a deep copy of the tree
+      let newTree: TreeNode[] = JSON.parse(JSON.stringify(prevTree));
+  
+      // Find and remove the dragged node from the tree
+      const extractNode = (nodes: TreeNode[], nodeId: string): TreeNode | undefined => {
+        for (let i = 0; i < nodes.length; i++) {
+          if (nodes[i].id === nodeId) {
+            const [node] = nodes.splice(i, 1);
+            return node;
+          }
+          // Check if children is defined before proceeding
+          if (nodes[i].children) {
+            //@ts-ignore
+            const result = extractNode(nodes[i].children, nodeId);
+            if (result) return result;
+          }
+        }
+      };
+      const draggedNode = extractNode(newTree, draggedNodeId);
+  
+      // Add the dragged node to the new parent node
+      const insertNode = (nodes: TreeNode[], nodeId: string, newNode: TreeNode) => {
+        nodes.forEach(node => {
+          if (node.id === nodeId) {
+            if (!node.children) node.children = [];
+            node.children.push(newNode);
+          } else if (node.children) {
+            insertNode(node.children, nodeId, newNode);
+          }
+        });
+      };
+      if(draggedNode){
+        insertNode(newTree, targetNodeId, draggedNode);
+      } else {
+        console.warn('no dragged node found')
+      }
+  
+      return newTree;
+    });
+  };
   // Function to handle adding a new node
   const addNode = (parentId: string, newNode: TreeNode) => {
     setTree(prevTree => {
@@ -254,7 +296,7 @@ const deleteKeyValuePair = (nodeId: string, key: string) => {
             </div>
           ))}
           <details>
-            <summary>Edit k/vs</summary>
+            <summary>Edit props</summary>
             <div>
               <input 
                 type="text" 
