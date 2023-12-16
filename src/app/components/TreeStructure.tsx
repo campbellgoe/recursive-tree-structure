@@ -20,7 +20,7 @@ type TreeStructureProps = {
 }
 
 const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
-  const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'style'];
+  const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'style'];
   const createNode = (o = {}) => ({
     id: uuidv4(),
     name: 'New node',
@@ -44,6 +44,9 @@ const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
   });
   useEffect(() => {
     localStorage.setItem('treeData' + id, JSON.stringify(tree));
+    if(tree.length === 0){
+      setTree([createNode({ name: 'Root node', type: 'Fragment' })])
+    }
   }, [tree]);
 
   // Function to handle adding a new node
@@ -290,7 +293,7 @@ const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
                   ))}
                 </select>
                 {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
-                <button onClick={() => node.name !== 'Root node' && deleteNode(node.id)}>Delete</button>
+                <button onClick={() => deleteNode(node.id)}>Delete</button>
 
               </div>
               {node.data && node.data.map(({ key, value }) => (
