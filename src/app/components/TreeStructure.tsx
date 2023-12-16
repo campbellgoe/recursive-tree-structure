@@ -131,6 +131,23 @@ const TreeStructure: React.FC = () => {
     }));
   };
 
+  const handleNameChange = (nodeId: string, newName: string) => {
+    setTree(prevTree => {
+      const updateNameRecursive = (nodes: TreeNode[]): TreeNode[] => (
+        nodes.map(node => {
+          if (node.id === nodeId) {
+            return { ...node, name: newName };
+          }
+          if (node.children) {
+            return { ...node, children: updateNameRecursive(node.children) };
+          }
+          return node;
+        })
+      );
+      return updateNameRecursive(prevTree);
+    });
+  };
+
   // Recursive function to render tree nodes
   const renderTree = (nodes: TreeNode[], parentId?: string) => (
     <ul>
@@ -138,8 +155,12 @@ const TreeStructure: React.FC = () => {
         <li key={node.id} className="flex flex-col border">
           <details>
             <summary>
-
-            {node.name}
+              {node.name}  <input 
+                type="text" 
+                value={node.name} 
+                onChange={(e) => handleNameChange(node.id, e.target.value)}
+                className="outline-none"
+              />
             </summary>
           <div>
             {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
