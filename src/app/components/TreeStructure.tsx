@@ -1,6 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+
 
 interface KeyValue {
   key: string;
@@ -31,13 +33,15 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
   });
 
   const [tree, setTree] = useState<TreeNode[]>(() => {
+    if(typeof window != 'undefined'){
     const savedTreeData = localStorage.getItem('treeData'+id);
     try {
       return savedTreeData ? JSON.parse(savedTreeData) : [createNode({ name: 'Root node', tagName:'Fragment' })];
     } catch(err){
       console.error(err)
-      return [createNode({ name: 'Root node', type: 'Fragment' })]
+     
     }
+  } return [createNode({ name: 'Root node', type: 'Fragment' })]
   });
   useEffect(() => {
     localStorage.setItem('treeData'+id, JSON.stringify(tree));
@@ -217,13 +221,74 @@ const deleteKeyValuePair = (nodeId: string, key: string) => {
     return deleteKeyValuePairRecursive(prevTree);
   });
 };
+const onDragEnd = (result: any) => {
+  const { source, destination } = result;
+
+  // Dropped outside the list
+  if (!destination) {
+    return;
+  }
+
+  // If the location of the draggable changed
+  if (source.droppableId !== destination.droppableId || source.index !== destination.index) {
+    setTree(prevTree => {
+      // Deep copy of the tree to avoid mutating the state directly
+      let newTree = JSON.parse(JSON.stringify(prevTree));
+
+      // Find the node being dragged
+      let draggedNode = null;
+      const recursiveFind = (nodes: TreeNode[], nodeId: string) => {
+        for (let i = 0; i < nodes.length; i++) {
+          if (nodes[i].id === nodeId) {
+            draggedNode = nodes.splice(i, 1)[0];
+            break;
+          } else if (nodes[i].children) {
+            //@ts-ignore
+            recursiveFind(nodes[i].children, nodeId);
+          }
+        }
+      };
+      recursiveFind(newTree, result.draggableId);
+
+      if (!draggedNode) {
+        return prevTree;
+      }
+
+      // Find the new parent and insert the node
+      const recursiveInsert = (nodes: TreeNode[], parentId: string, newNode: TreeNode, index: number) => {
+        if (parentId === 'root') {
+          nodes.splice(index, 0, newNode);
+        } else {
+          for (const node of nodes) {
+            if (node.id === parentId) {
+              // @ts-ignore
+              node.children.splice(index, 0, newNode);
+              break;
+            } else if (node.children) {
+              recursiveInsert(node.children, parentId, newNode, index);
+            }
+          }
+        }
+      };
+      recursiveInsert(newTree, destination.droppableId, draggedNode, destination.index);
+
+      return newTree;
+    });
+  }
+};
   // Recursive function to render tree nodes
   const renderEditableTree = (nodes: TreeNode[], parentId?: string) => (
-    <>
-      {nodes.map(node => {
+    <Droppable droppableId={parentId || 'root'} type="NODE">
+    {(provided) => (
+      <div ref={provided.innerRef} {...provided.droppableProps}>
+      {nodes.map((node, index) => {
       
         return (
-        <div key={node.id} className={"flex flex-col border"} style={{marginLeft:'2ch'}}>
+          <Draggable key={node.id} draggableId={node.id} index={index}>
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.draggableProps} key={node.id} className={"flex flex-col border"} style={{marginLeft:'2ch'}}>
           <details>
             <summary>
               {node.name} 
@@ -276,13 +341,50 @@ const deleteKeyValuePair = (nodeId: string, key: string) => {
           {node.children && renderEditableTree(node.children, node.id)}
           
           </details>
-        </div>
+        </div>)}
+          </Draggable>
       )
           })}
       {parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
-    </>
+      {provided.placeholder}
+      </div>
+      )}
+  </Droppable>
   );
-  return <div><section>{renderEditableTree(tree)}</section><br/><section>{renderTreeAsJsx(tree)}</section></div>;
+  return <div><DragDropContext onDragEnd={onDragEnd}>
+  {renderEditableTree(tree)}
+</DragDropContext>
+<br/>
+<section>{renderTreeAsJsx(tree)}</section></div>;
 };
+
+
+// // Recursive function to render the tree with drag-and-drop functionality
+// const renderEditableTree = (nodes: TreeNode[], parentId?: string) => (
+//   <Droppable droppableId={parentId || 'root'} type="NODE">
+//     {(provided) => (
+//       <div ref={provided.innerRef} {...provided.droppableProps}>
+//         {nodes.map((node, index) => (
+//           <Draggable key={node.id} draggableId={node.id} index={index}>
+//             {(provided) => (
+//               <div
+//                 ref={provided.innerRef}
+//                 {...provided.draggableProps}
+//                 className={"flex flex-col border"}
+//                 style={{ marginLeft: '2ch' }}
+//               >
+//                 <div {...provided.dragHandleProps}>
+//                   {/* Node content here */}
+//                 </div>
+//                 {node.children && renderEditableTree(node.children, node.id)}
+//               </div>
+//             )}
+//           </Draggable>
+//         ))}
+//         {provided.placeholder}
+//       </div>
+//     )}
+//   </Droppable>
+// );
 
 export default TreeStructure;
