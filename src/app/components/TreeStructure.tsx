@@ -1,6 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { DropZone } from './Dnd/DropZone';
+import { DraggableNode } from './Dnd/DraggableNode';
 
 interface KeyValue {
   key: string;
@@ -19,7 +21,7 @@ type TreeStructureProps = {
   id: string;
 }
 
-const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
+const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
   const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'style'];
   const createNode = (o = {}) => ({
     id: uuidv4(),
@@ -31,58 +33,88 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
   });
 
   const [tree, setTree] = useState<TreeNode[]>(() => {
-    const savedTreeData = localStorage.getItem('treeData'+id);
-    try {
-      return savedTreeData ? JSON.parse(savedTreeData) : [createNode({ name: 'Root node', tagName:'Fragment' })];
-    } catch(err){
-      console.error(err)
-      return [createNode({ name: 'Root node', type: 'Fragment' })]
+    if(typeof window != 'undefined'){
+      const savedTreeData = window?.localStorage.getItem('treeData' + id);
+      try {
+        return savedTreeData ? JSON.parse(savedTreeData) : [createNode({ name: 'Root node', tagName: 'Fragment' })];
+      } catch (err) {
+        console.error(err)
+      }
     }
+    return [createNode({ name: 'Root node', type: 'Fragment' })]
   });
   useEffect(() => {
-    localStorage.setItem('treeData'+id, JSON.stringify(tree));
+    localStorage.setItem('treeData' + id, JSON.stringify(tree));
   }, [tree]);
 
-  const handleDrop = (draggedNodeId: string, targetNodeId: string, setTree: React.Dispatch<React.SetStateAction<TreeNode[]>>) => {
-    setTree(prevTree => {
-      // Create a deep copy of the tree
-      let newTree: TreeNode[] = JSON.parse(JSON.stringify(prevTree));
+  const handleDrop = (draggedNodeId: string, targetNodeId: string, isAdjacentDrop: boolean) => {
+    if (draggedNodeId === targetNodeId) {
+      // Prevents dropping a node onto itself.
+      return;
+    }
   
-      // Find and remove the dragged node from the tree
-      const extractNode = (nodes: TreeNode[], nodeId: string): TreeNode | undefined => {
+    setTree(prevTree => {
+      const cloneTree = (nodes: TreeNode[]): TreeNode[] => {
+        return nodes.map(node => ({ ...node, children: node.children ? cloneTree(node.children) : [] }));
+      };
+  
+      const findAndRemoveNode = (nodes: TreeNode[], nodeId: string): [TreeNode | null, TreeNode[]] => {
         for (let i = 0; i < nodes.length; i++) {
           if (nodes[i].id === nodeId) {
-            const [node] = nodes.splice(i, 1);
-            return node;
-          }
-          // Check if children is defined before proceeding
-          if (nodes[i].children) {
+            const [removedNode] = nodes.splice(i, 1);
+            return [removedNode, nodes];
+          } else if (nodes[i].children) {
             //@ts-ignore
-            const result = extractNode(nodes[i].children, nodeId);
-            if (result) return result;
+            const [foundNode, newChildren] = findAndRemoveNode(nodes[i].children, nodeId);
+            if (foundNode) {
+              nodes[i].children = newChildren;
+              return [foundNode, nodes];
+            }
           }
         }
+        return [null, nodes];
       };
-      const draggedNode = extractNode(newTree, draggedNodeId);
   
-      // Add the dragged node to the new parent node
-      const insertNode = (nodes: TreeNode[], nodeId: string, newNode: TreeNode) => {
-        nodes.forEach(node => {
-          if (node.id === nodeId) {
-            if (!node.children) node.children = [];
-            node.children.push(newNode);
-          } else if (node.children) {
-            insertNode(node.children, nodeId, newNode);
-          }
-        });
-      };
-      if(draggedNode){
-        insertNode(newTree, targetNodeId, draggedNode);
-      } else {
-        console.warn('no dragged node found')
+      let clonedTree = cloneTree(prevTree);
+      const [draggedNode, newTreeWithoutDraggedNode] = findAndRemoveNode(clonedTree, draggedNodeId);
+      if (!draggedNode) {
+        console.warn('Dragged node not found');
+        return prevTree;
       }
   
-      return newTree;
+      const addNodeAtTargetPosition = (nodes: TreeNode[], nodeId: string, newNode: TreeNode, adjacent: boolean): boolean => {
+        for (let i = 0; i < nodes.length; i++) {
+          if (nodes[i].id === nodeId) {
+            if (adjacent) {
+              // Insert the dragged node adjacent to the target node
+              nodes.splice(i + 1, 0, newNode);
+            } else {
+              // Add as a child of the target node
+              if (!nodes[i].children) {
+                nodes[i].children = [];
+              }
+              //@ts-ignore
+              nodes[i].children.push(newNode);
+            }
+            return true;
+          } else if (nodes[i].children) {
+            //@ts-ignore
+            const added = addNodeAtTargetPosition(nodes[i].children, nodeId, newNode, adjacent);
+            if (added) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+  
+      const added = addNodeAtTargetPosition(newTreeWithoutDraggedNode, targetNodeId, draggedNode, isAdjacentDrop);
+      if (!added) {
+        console.warn('Target node not found');
+        return prevTree;
+      }
+  
+      return newTreeWithoutDraggedNode;
     });
   };
   // Function to handle adding a new node
@@ -106,23 +138,6 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
     });
   };
 
-  // Function to handle updating a node's key-value pairs
-  const updateNodeData = (nodeId: string, newData: KeyValue[]) => {
-    setTree(prevTree => {
-      const updateNodeDataRecursive = (nodes: TreeNode[]): TreeNode[] => {
-        return nodes.map(node => {
-          if (node.id === nodeId) {
-            return { ...node, data: newData };
-          }
-          if (node.children) {
-            return { ...node, children: updateNodeDataRecursive(node.children) };
-          }
-          return node;
-        });
-      };
-      return updateNodeDataRecursive(prevTree);
-    });
-  };
 
   // Function to handle deleting a node
   const deleteNode = (nodeId: string) => {
@@ -155,7 +170,7 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
       return updateDataRecursive(prevTree);
     });
   };
-  
+
   const [newKeyValue, setNewKeyValue] = useState<{ [nodeId: string]: KeyValue }>({});
   const addKeyValuePair = (nodeId: string) => {
     const newPair = newKeyValue[nodeId];
@@ -230,7 +245,7 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
             acc[key] = value;
             return acc;
           }, {});
-  
+
           return (
             <Component key={node.id} {...props}>
               {node.name}
@@ -242,89 +257,97 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
     );
   };
 
-const deleteKeyValuePair = (nodeId: string, key: string) => {
-  setTree(prevTree => {
-    const deleteKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
-      nodes.map(node => {
-        if (node.id === nodeId) {
-          const newData = (node.data || []).filter(d => d.key !== key);
-          return { ...node, data: newData };
-        }
-        if (node.children) {
-          return { ...node, children: deleteKeyValuePairRecursive(node.children) };
-        }
-        return node;
-      })
-    );
-    return deleteKeyValuePairRecursive(prevTree);
-  });
-};
+  const deleteKeyValuePair = (nodeId: string, key: string) => {
+    setTree(prevTree => {
+      const deleteKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
+        nodes.map(node => {
+          if (node.id === nodeId) {
+            const newData = (node.data || []).filter(d => d.key !== key);
+            return { ...node, data: newData };
+          }
+          if (node.children) {
+            return { ...node, children: deleteKeyValuePairRecursive(node.children) };
+          }
+          return node;
+        })
+      );
+      return deleteKeyValuePairRecursive(prevTree);
+    });
+  };
   // Recursive function to render tree nodes
   const renderEditableTree = (nodes: TreeNode[], parentId?: string) => (
     <>
       {nodes.map(node => {
-      
+
         return (
-        <div key={node.id} className={"flex flex-col border"} style={{marginLeft:'2ch'}}>
-          <details>
-            <summary>
-              {node.name} 
-            </summary>
-          <div>
-          <input 
-                type="text" 
-                value={node.name} 
-                onChange={(e) => handleNameChange(node.id, e.target.value)}
-                className="outline-none"
-              />
-              <select
-              value={node.tagName || 'Fragment'}
-              onChange={(e) => handleTagNameChange(node.id, e.target.value)}
-              className="outline-none"
-            >
-              {allowedTagNames.map(tagName => (
-                <option key={tagName} value={tagName}>{tagName}</option>
-              ))}
-            </select>
-            {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
-            <button onClick={() => node.name !== 'Root node' && deleteNode(node.id)}>Delete</button>
-          </div>
-          {node.data && node.data.map(({ key, value }) => (
-            <div key={key}>
-              {key}: <input className="text-black"type="text" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
-              <button onClick={() => deleteKeyValuePair(node.id, key)}>Delete</button>
-            </div>
-          ))}
-          <details>
-            <summary>Edit props</summary>
-            <div>
-              <input 
-                type="text" 
-                placeholder="Key" 
-                value={newKeyValue[node.id]?.key || ''} 
-                onChange={e => handleNewKeyValueChange(node.id, 'key', e.target.value)}
-              />
-              <input 
-                type="text" 
-                placeholder="Value" 
-                value={newKeyValue[node.id]?.value || ''} 
-                onChange={e => handleNewKeyValueChange(node.id, 'value', e.target.value)}
-              />
-              <button onClick={() => addKeyValuePair(node.id)}>
-                Add Key-Value Pair
-              </button>
-            </div>
-          </details>
-          {node.children && renderEditableTree(node.children, node.id)}
           
-          </details>
-        </div>
-      )
-          })}
+              <div className={"flex flex-col border"} style={{ marginLeft: '2ch' }}>
+                <DraggableNode id={node.id}><button>Drag</button></DraggableNode>
+                    <DropZone key={node.id} id={node.id} onDrop={(dId, tId) => handleDrop(dId, tId, false)}>
+                      <div className="border border-emerald-700">Drop (nest)</div>
+                    </DropZone>
+                    <DropZone key={node.id} id={node.id} onDrop={(dId, tId) => handleDrop(dId, tId, true)}>
+                      <div className="border border-emerald-700">Drop (adjacent)</div>
+                    </DropZone>
+                <details>
+                  <summary>
+                    {node.name}
+                    
+                  </summary>
+                  <div>
+                    <input
+                      type="text"
+                      value={node.name}
+                      onChange={(e) => handleNameChange(node.id, e.target.value)}
+                      className="outline-none"
+                    />
+                    <select
+                      value={node.tagName || 'Fragment'}
+                      onChange={(e) => handleTagNameChange(node.id, e.target.value)}
+                      className="outline-none"
+                    >
+                      {allowedTagNames.map(tagName => (
+                        <option key={tagName} value={tagName}>{tagName}</option>
+                      ))}
+                    </select>
+                    {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
+                    <button onClick={() => node.name !== 'Root node' && deleteNode(node.id)}>Delete</button>
+                  </div>
+                  {node.data && node.data.map(({ key, value }) => (
+                    <div key={key}>
+                      {key}: <input className="text-black" type="text" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
+                      <button onClick={() => deleteKeyValuePair(node.id, key)}>Delete</button>
+                    </div>
+                  ))}
+                  <details>
+                    <summary>Edit props</summary>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Key"
+                        value={newKeyValue[node.id]?.key || ''}
+                        onChange={e => handleNewKeyValueChange(node.id, 'key', e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Value"
+                        value={newKeyValue[node.id]?.value || ''}
+                        onChange={e => handleNewKeyValueChange(node.id, 'value', e.target.value)}
+                      />
+                      <button onClick={() => addKeyValuePair(node.id)}>
+                        Add Key-Value Pair
+                      </button>
+                    </div>
+                  </details>
+                  {node.children && renderEditableTree(node.children, node.id)}
+                </details>
+              </div>
+        )
+      })}
       {parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
     </>
   );
-  return <div><section>{renderEditableTree(tree)}</section><br/><section>{renderTreeAsJsx(tree)}</section></div>;
+  return <div><section>{renderEditableTree(tree)}</section><br /><section>{renderTreeAsJsx(tree)}</section></div>;
 };
 
 export default TreeStructure;

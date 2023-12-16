@@ -1,9 +1,9 @@
 import { useDrag } from 'react-dnd';
 
-export const DraggableNode = ({ node, children }: any) => {
+export const DraggableNode = ({ id, children }: any) => {
   const [{ isDragging }, dragRef] = useDrag(() => ({
     type: 'NODE',
-    item: { id: node.id },
+    item: { id },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
