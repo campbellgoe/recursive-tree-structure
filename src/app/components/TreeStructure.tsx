@@ -1,9 +1,10 @@
 'use client';
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+
 interface KeyValue {
   key: string;
-  value: any;
+  value: string;
 }
 
 interface TreeNode {
@@ -14,25 +15,18 @@ interface TreeNode {
 }
 
 const TreeStructure: React.FC = () => {
-  const createNode = (o = {}) => {
-    return {
-      id: uuidv4(),
-      name: 'New node',
-      children: [],
-      data: [
-        {
-          key: 'message',
-          value: 'Hello world, I was created '+(new Date()).toLocaleDateString()
-        },
-      ],
-      ...o,
-    }
-  }
-  const [tree, setTree] = useState<TreeNode[]>([
-    createNode({
-      name: 'Root node'
-    })
-  ]);
+  const createNode = (o = {}) => ({
+    id: uuidv4(),
+    name: 'New node',
+    children: [],
+    data: [{
+      key: 'message',
+      value: 'Hello world, I was created ' + (new Date()).toLocaleDateString()
+    }],
+    ...o,
+  });
+
+  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node' })]);
  
 
   // Function to handle adding a new node
@@ -76,27 +70,55 @@ const TreeStructure: React.FC = () => {
 
   // Function to handle deleting a node
   const deleteNode = (nodeId: string) => {
-    // Logic to delete a node
+    setTree(prevTree => {
+      const deleteNodeRecursive = (nodes: TreeNode[]): TreeNode[] => (
+        nodes.filter(node => node.id !== nodeId)
+          .map(node => ({
+            ...node,
+            children: node.children ? deleteNodeRecursive(node.children) : []
+          }))
+      );
+      return deleteNodeRecursive(prevTree);
+    });
+  };
+
+  const handleDataChange = (nodeId: string, key: string, value: string) => {
+    setTree(prevTree => {
+      const updateDataRecursive = (nodes: TreeNode[]): TreeNode[] => (
+        nodes.map(node => {
+          if (node.id === nodeId) {
+            const updatedData = (node.data || []).map(d => d.key === key ? { ...d, value } : d);
+            return { ...node, data: updatedData };
+          }
+          if (node.children) {
+            return { ...node, children: updateDataRecursive(node.children) };
+          }
+          return node;
+        })
+      );
+      return updateDataRecursive(prevTree);
+    });
   };
 
   // Recursive function to render tree nodes
   const renderTree = (nodes: TreeNode[], parentId?: string) => (
-    <ul className="border">
+    <ul>
       {nodes.map(node => (
-        <li key={node.id} className="flex w-96 justify-between">
+        <li key={node.id} className="flex flex-col border">
           {node.name}
-          <button onClick={() => addNode(node.id, createNode({
-            name: 'New child'
-          }))}>Add Child</button>
-          <button onClick={() => updateNodeData(node.id, node.data ? [...node.data, { key: 'message', value: 'edited'}] : [])}>Edit</button>
-          <button onClick={() => deleteNode(node.id)}>Delete</button>
-          {node.data ? node.data.map(({ key, value }) => <p>{key}: {value}</p>) : null}
+          <div>
+            {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
+            <button onClick={() => node.name !== 'Root node' && deleteNode(node.id)}>Delete</button>
+          </div>
+          {node.data && node.data.map(({ key, value }) => (
+            <div key={key}>
+              {key}: <input className="text-black"type="text" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
+            </div>
+          ))}
           {node.children && renderTree(node.children, node.id)}
         </li>
       ))}
-      {parentId && <button onClick={() => addNode(parentId, createNode({
-        name: 'New sibling'
-      }))}>Add Sibling</button>}
+      {parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
     </ul>
   );
 
