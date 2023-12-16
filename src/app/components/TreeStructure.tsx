@@ -12,7 +12,7 @@ interface TreeNode {
   name: string;
   children?: TreeNode[];
   data?: KeyValue[];
-  type: string;
+  tagName?: string;
 }
 
 const TreeStructure: React.FC = () => {
@@ -24,11 +24,11 @@ const TreeStructure: React.FC = () => {
       key: 'message',
       value: 'Hello world, I was created ' + (new Date()).toLocaleDateString()
     }],
-    type: 'div',
+    tagName: 'div',
     ...o,
   });
 
-  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', type:'div' })]);
+  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', type:'' })]);
  
 
   // Function to handle adding a new node
@@ -149,17 +149,45 @@ const TreeStructure: React.FC = () => {
       return updateNameRecursive(prevTree);
     });
   };
+const renderTreeAsJsx = (nodes: TreeNode[], parentId?: string) => {
+  return <>
+  {nodes.map(node => {
+  
+  const Component = node.tagName || React.Fragment
+  return (
+    <Component key={node.id}>
+      {node.name}
+      {node.children && renderTreeAsJsx(node.children, node.id)}
+    </Component>
+  )
+  })}</>
+}
 
+const deleteKeyValuePair = (nodeId: string, key: string) => {
+  setTree(prevTree => {
+    const deleteKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
+      nodes.map(node => {
+        if (node.id === nodeId) {
+          const newData = (node.data || []).filter(d => d.key !== key);
+          return { ...node, data: newData };
+        }
+        if (node.children) {
+          return { ...node, children: deleteKeyValuePairRecursive(node.children) };
+        }
+        return node;
+      })
+    );
+    return deleteKeyValuePairRecursive(prevTree);
+  });
+};
   // Recursive function to render tree nodes
-  const renderTree = (nodes: TreeNode[], parentId?: string, output?: boolean) => (
+  const renderEditableTree = (nodes: TreeNode[], parentId?: string) => (
     <>
       {nodes.map(node => {
       
-      const Component = node.type
         return (
-          //@ts-ignore
-        <Component key={node.id} className={"flex flex-col border"} style={{marginLeft:output ? '': '2ch'}}>
-          {!output && <details>
+        <div key={node.id} className={"flex flex-col border"} style={{marginLeft:'2ch'}}>
+          <details>
             <summary>
               {node.name} 
             </summary>
@@ -176,36 +204,39 @@ const TreeStructure: React.FC = () => {
           {node.data && node.data.map(({ key, value }) => (
             <div key={key}>
               {key}: <input className="text-black"type="text" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
+              <button onClick={() => deleteKeyValuePair(node.id, key)}>Delete</button>
             </div>
           ))}
-           <div>
-            <input 
-              type="text" 
-              placeholder="Key" 
-              value={newKeyValue[node.id]?.key || ''} 
-              onChange={e => handleNewKeyValueChange(node.id, 'key', e.target.value)}
-            />
-            <input 
-              type="text" 
-              placeholder="Value" 
-              value={newKeyValue[node.id]?.value || ''} 
-              onChange={e => handleNewKeyValueChange(node.id, 'value', e.target.value)}
-            />
-            <button onClick={() => addKeyValuePair(node.id)}>
-              Add Key-Value Pair
-            </button>
-          </div>
-          {node.children && renderTree(node.children, node.id, output)}
+          <details>
+            <summary>Edit k/vs</summary>
+            <div>
+              <input 
+                type="text" 
+                placeholder="Key" 
+                value={newKeyValue[node.id]?.key || ''} 
+                onChange={e => handleNewKeyValueChange(node.id, 'key', e.target.value)}
+              />
+              <input 
+                type="text" 
+                placeholder="Value" 
+                value={newKeyValue[node.id]?.value || ''} 
+                onChange={e => handleNewKeyValueChange(node.id, 'value', e.target.value)}
+              />
+              <button onClick={() => addKeyValuePair(node.id)}>
+                Add Key-Value Pair
+              </button>
+            </div>
+          </details>
+          {node.children && renderEditableTree(node.children, node.id)}
           
-          </details>}
-          {output && <div>{node.name}{node.children && renderTree(node.children, node.id, output)}</div>}
-        </Component>
+          </details>
+        </div>
       )
           })}
-      {!output && parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
+      {parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
     </>
   );
-  return <div><section>{renderTree(tree)}</section><br/><section>{renderTree(tree, undefined, true)}</section></div>;
+  return <div><section>{renderEditableTree(tree)}</section><br/><section>{renderTreeAsJsx(tree)}</section></div>;
 };
 
 export default TreeStructure;
