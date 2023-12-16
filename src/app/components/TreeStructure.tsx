@@ -99,6 +99,37 @@ const TreeStructure: React.FC = () => {
       return updateDataRecursive(prevTree);
     });
   };
+  
+  const [newKeyValue, setNewKeyValue] = useState<{ [nodeId: string]: KeyValue }>({});
+  const addKeyValuePair = (nodeId: string) => {
+    const newPair = newKeyValue[nodeId];
+    if (newPair && newPair.key && newPair.value) {
+      setTree(prevTree => {
+        const addKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
+          nodes.map(node => {
+            if (node.id === nodeId) {
+              const newData = [...(node.data || []), newPair];
+              return { ...node, data: newData };
+            }
+            if (node.children) {
+              return { ...node, children: addKeyValuePairRecursive(node.children) };
+            }
+            return node;
+          })
+        );
+        return addKeyValuePairRecursive(prevTree);
+      });
+      // Reset the input fields for this node
+      setNewKeyValue(prev => ({ ...prev, [nodeId]: { key: '', value: '' } }));
+    }
+  };
+
+  const handleNewKeyValueChange = (nodeId: string, key: string, value: string) => {
+    setNewKeyValue(prev => ({
+      ...prev,
+      [nodeId]: { ...prev[nodeId], [key]: value }
+    }));
+  };
 
   // Recursive function to render tree nodes
   const renderTree = (nodes: TreeNode[], parentId?: string) => (
@@ -115,6 +146,23 @@ const TreeStructure: React.FC = () => {
               {key}: <input className="text-black"type="text" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
             </div>
           ))}
+           <div>
+            <input 
+              type="text" 
+              placeholder="Key" 
+              value={newKeyValue[node.id]?.key || ''} 
+              onChange={e => handleNewKeyValueChange(node.id, 'key', e.target.value)}
+            />
+            <input 
+              type="text" 
+              placeholder="Value" 
+              value={newKeyValue[node.id]?.value || ''} 
+              onChange={e => handleNewKeyValueChange(node.id, 'value', e.target.value)}
+            />
+            <button onClick={() => addKeyValuePair(node.id)}>
+              Add Key-Value Pair
+            </button>
+          </div>
           {node.children && renderTree(node.children, node.id)}
         </li>
       ))}

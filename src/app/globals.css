@@ -30,3 +30,7 @@ body {
 ul {
   margin-left: 2ch;
 }
+
+input {
+  color: black;
+}
