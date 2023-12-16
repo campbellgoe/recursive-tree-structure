@@ -136,7 +136,11 @@ const TreeStructure: React.FC = () => {
     <ul>
       {nodes.map(node => (
         <li key={node.id} className="flex flex-col border">
-          {node.name}
+          <details>
+            <summary>
+
+            {node.name}
+            </summary>
           <div>
             {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
             <button onClick={() => node.name !== 'Root node' && deleteNode(node.id)}>Delete</button>
@@ -164,6 +168,8 @@ const TreeStructure: React.FC = () => {
             </button>
           </div>
           {node.children && renderTree(node.children, node.id)}
+          
+          </details>
         </li>
       ))}
       {parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
