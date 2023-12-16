@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface KeyValue {
@@ -15,21 +15,33 @@ interface TreeNode {
   tagName?: string;
 }
 
-const TreeStructure: React.FC = () => {
+type TreeStructureProps = {
+  id: string;
+}
+
+const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
+  const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment'];
   const createNode = (o = {}) => ({
     id: uuidv4(),
     name: 'New node',
     children: [],
-    data: [{
-      key: 'message',
-      value: 'Hello world, I was created ' + (new Date()).toLocaleDateString()
-    }],
+    data: [],
     tagName: 'div',
     ...o,
   });
 
-  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', type:'' })]);
- 
+  const [tree, setTree] = useState<TreeNode[]>(() => {
+    const savedTreeData = localStorage.getItem('treeData'+id);
+    try {
+      return savedTreeData ? JSON.parse(savedTreeData) : [createNode({ name: 'Root node', tagName:'Fragment' })];
+    } catch(err){
+      console.error(err)
+      return [createNode({ name: 'Root node', type: 'Fragment' })]
+    }
+  });
+  useEffect(() => {
+    localStorage.setItem('treeData'+id, JSON.stringify(tree));
+  }, [tree]);
 
   // Function to handle adding a new node
   const addNode = (parentId: string, newNode: TreeNode) => {
@@ -149,11 +161,29 @@ const TreeStructure: React.FC = () => {
       return updateNameRecursive(prevTree);
     });
   };
+
+  const handleTagNameChange = (nodeId: string, newTagName: string) => {
+    setTree(prevTree => {
+      const updateTagNameRecursive = (nodes: TreeNode[]): TreeNode[] => (
+        nodes.map(node => {
+          if (node.id === nodeId) {
+            return { ...node, tagName: newTagName };
+          }
+          if (node.children) {
+            return { ...node, children: updateTagNameRecursive(node.children) };
+          }
+          return node;
+        })
+      );
+      return updateTagNameRecursive(prevTree);
+    });
+  };
+
 const renderTreeAsJsx = (nodes: TreeNode[], parentId?: string) => {
   return <>
   {nodes.map(node => {
   
-  const Component = node.tagName || React.Fragment
+  const Component = node.tagName === 'Fragment' ? React.Fragment : node.tagName || React.Fragment
   return (
     <Component key={node.id}>
       {node.name}
@@ -198,6 +228,15 @@ const deleteKeyValuePair = (nodeId: string, key: string) => {
                 onChange={(e) => handleNameChange(node.id, e.target.value)}
                 className="outline-none"
               />
+              <select
+              value={node.tagName || 'Fragment'}
+              onChange={(e) => handleTagNameChange(node.id, e.target.value)}
+              className="outline-none"
+            >
+              {allowedTagNames.map(tagName => (
+                <option key={tagName} value={tagName}>{tagName}</option>
+              ))}
+            </select>
             {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
             <button onClick={() => node.name !== 'Root node' && deleteNode(node.id)}>Delete</button>
           </div>
