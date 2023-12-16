@@ -20,7 +20,7 @@ type TreeStructureProps = {
 }
 
 const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
-  const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment'];
+  const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'style'];
   const createNode = (o = {}) => ({
     id: uuidv4(),
     name: 'New node',
@@ -179,19 +179,26 @@ const TreeStructure: any = ({ id = ''}: TreeStructureProps) => {
     });
   };
 
-const renderTreeAsJsx = (nodes: TreeNode[], parentId?: string) => {
-  return <>
-  {nodes.map(node => {
+  const renderTreeAsJsx = (nodes: TreeNode[], parentId?: string) => {
+    return (
+      <>
+        {nodes.map(node => {
+          const Component = node.tagName === 'Fragment' ? React.Fragment : node.tagName || 'div';
+          const props = (node.data || []).reduce((acc: any, { key, value }) => {
+            acc[key] = value;
+            return acc;
+          }, {});
   
-  const Component = node.tagName === 'Fragment' ? React.Fragment : node.tagName || React.Fragment
-  return (
-    <Component key={node.id}>
-      {node.name}
-      {node.children && renderTreeAsJsx(node.children, node.id)}
-    </Component>
-  )
-  })}</>
-}
+          return (
+            <Component key={node.id} {...props}>
+              {node.name}
+              {node.children && renderTreeAsJsx(node.children, node.id)}
+            </Component>
+          );
+        })}
+      </>
+    );
+  };
 
 const deleteKeyValuePair = (nodeId: string, key: string) => {
   setTree(prevTree => {
