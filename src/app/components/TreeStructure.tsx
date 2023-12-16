@@ -12,6 +12,7 @@ interface TreeNode {
   name: string;
   children?: TreeNode[];
   data?: KeyValue[];
+  type: string;
 }
 
 const TreeStructure: React.FC = () => {
@@ -23,10 +24,11 @@ const TreeStructure: React.FC = () => {
       key: 'message',
       value: 'Hello world, I was created ' + (new Date()).toLocaleDateString()
     }],
+    type: 'div',
     ...o,
   });
 
-  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node' })]);
+  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', type:'div' })]);
  
 
   // Function to handle adding a new node
@@ -149,20 +151,25 @@ const TreeStructure: React.FC = () => {
   };
 
   // Recursive function to render tree nodes
-  const renderTree = (nodes: TreeNode[], parentId?: string) => (
-    <ul>
-      {nodes.map(node => (
-        <li key={node.id} className="flex flex-col border">
-          <details>
+  const renderTree = (nodes: TreeNode[], parentId?: string, output?: boolean) => (
+    <>
+      {nodes.map(node => {
+      
+      const Component = node.type
+        return (
+          //@ts-ignore
+        <Component key={node.id} className={"flex flex-col border"} style={{marginLeft:output ? '': '2ch'}}>
+          {!output && <details>
             <summary>
-              {node.name}  <input 
+              {node.name} 
+            </summary>
+          <div>
+          <input 
                 type="text" 
                 value={node.name} 
                 onChange={(e) => handleNameChange(node.id, e.target.value)}
                 className="outline-none"
               />
-            </summary>
-          <div>
             {/* <button onClick={() => addNode(node.id, createNode({ name: 'New child' }))}>Add Child</button> */}
             <button onClick={() => node.name !== 'Root node' && deleteNode(node.id)}>Delete</button>
           </div>
@@ -188,16 +195,17 @@ const TreeStructure: React.FC = () => {
               Add Key-Value Pair
             </button>
           </div>
-          {node.children && renderTree(node.children, node.id)}
+          {node.children && renderTree(node.children, node.id, output)}
           
-          </details>
-        </li>
-      ))}
-      {parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
-    </ul>
+          </details>}
+          {output && <div>{node.name}{node.children && renderTree(node.children, node.id, output)}</div>}
+        </Component>
+      )
+          })}
+      {!output && parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
+    </>
   );
-
-  return <div>{renderTree(tree)}</div>;
+  return <div><section>{renderTree(tree)}</section><br/><section>{renderTree(tree, undefined, true)}</section></div>;
 };
 
 export default TreeStructure;
