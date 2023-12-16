@@ -25,3 +25,8 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+
+ul {
+  margin-left: 2ch;
+}
