@@ -1,4 +1,5 @@
 'use client';
+import { useHasMounted } from '@/utils/useHasMounted';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -37,15 +38,16 @@ const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
         return savedTreeData ? JSON.parse(savedTreeData) : [createNode({ name: 'Root node', tagName: 'Fragment' })];
       } catch (err) {
         console.error(err)
-
       }
     }
     return [createNode({ name: 'Root node', type: 'Fragment' })]
   });
   useEffect(() => {
-    localStorage.setItem('treeData' + id, JSON.stringify(tree));
-    if(tree.length === 0){
-      setTree([createNode({ name: 'Root node', type: 'Fragment' })])
+    if (typeof window != 'undefined') {
+      localStorage.setItem('treeData' + id, JSON.stringify(tree));
+      if (tree.length === 0) {
+        setTree([createNode({ name: 'Root node', type: 'Fragment' })])
+      }
     }
   }, [tree]);
 
@@ -331,7 +333,15 @@ const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
       {parentId && <button onClick={() => addNode(parentId, createNode({ name: 'New sibling' }))}>+ Node</button>}
     </>
   );
-  return <div><section>{renderEditableTree(tree)}</section><br /><section>{renderTreeAsJsx(tree)}</section></div>;
+  const mounted = useHasMounted()
+  return mounted ? (<div><section>
+    {renderEditableTree(tree)}
+  </section>
+    <br />
+    <section>
+      {renderTreeAsJsx(tree)}
+    </section>
+  </div>) : (<div>Loading...</div>)
 };
 
 export default TreeStructure;
