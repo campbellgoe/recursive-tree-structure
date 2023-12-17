@@ -262,7 +262,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
           <div key={node.id} className={"flex flex-col border"} style={{ marginLeft: '2ch' }}>
             <details>
               <summary>
-                {node.name}
+                {node.name.length > 30 ? node.name.slice(0, 29)+"..." : node.name}
                 <div>
                   <button onClick={() => moveNode(node.id, 'up')}>&uarr;</button>
                   <button onClick={() => moveNode(node.id, 'down')}>&darr;</button>
