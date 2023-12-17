@@ -1,6 +1,6 @@
 'use client';
 import { useHasMounted } from '@/utils/useHasMounted';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface KeyValue {
@@ -16,44 +16,46 @@ interface TreeNode {
   tagName?: string;
 }
 
-type TreeStructureProps = {
+interface TreeStructureProps {
   id: string;
 }
 
-const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
-  const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'style'];
-  const createNode = (o = {}) => ({
+const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'style'];
+
+const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
+  const createNode = useCallback((options: Partial<TreeNode> = {}) => ({
     id: uuidv4(),
     name: 'New node',
     children: [],
     data: [],
     tagName: 'div',
-    ...o,
-  });
+    ...options,
+  }), []);
 
   const [tree, setTree] = useState<TreeNode[]>(() => {
-    if (typeof window != 'undefined') {
+    if (typeof window !== 'undefined') {
       const savedTreeData = localStorage.getItem('treeData' + id);
       try {
         return savedTreeData ? JSON.parse(savedTreeData) : [createNode({ name: 'Root node', tagName: 'Fragment' })];
       } catch (err) {
-        console.error(err)
+        console.error(err);
       }
     }
-    return [createNode({ name: 'Root node', type: 'Fragment' })]
+    return [createNode({ name: 'Root node', tagName: 'Fragment' })];
   });
+
   useEffect(() => {
-    if (typeof window != 'undefined') {
+    if (typeof window !== 'undefined') {
       localStorage.setItem('treeData' + id, JSON.stringify(tree));
       if (tree.length === 0) {
-        setTree([createNode({ name: 'Root node', type: 'Fragment' })])
+        setTree([createNode({ name: 'Root node', tagName: 'Fragment' })])
       }
     }
-  }, [tree]);
+  }, [tree, id]);
 
-  // Function to handle adding a new node
-  const addNode = (parentId: string, newNode: TreeNode) => {
+  const addNode = useCallback((parentId: string, newNode: TreeNode) => {
     setTree(prevTree => {
+      // Logic to add a new node
       const addNodeRecursive = (nodes: TreeNode[]): TreeNode[] => {
         return nodes.map(node => {
           if (node.id === parentId) {
@@ -70,41 +72,29 @@ const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
       };
       return addNodeRecursive(prevTree);
     });
-  };
+  }, []);
 
-  // Function to handle updating a node's key-value pairs
-  const updateNodeData = (nodeId: string, newData: KeyValue[]) => {
-    setTree(prevTree => {
-      const updateNodeDataRecursive = (nodes: TreeNode[]): TreeNode[] => {
-        return nodes.map(node => {
-          if (node.id === nodeId) {
-            return { ...node, data: newData };
-          }
-          if (node.children) {
-            return { ...node, children: updateNodeDataRecursive(node.children) };
-          }
-          return node;
-        });
-      };
-      return updateNodeDataRecursive(prevTree);
-    });
-  };
+  const deleteNode = useCallback((nodeId: string) => {
+    const confirmed = confirm('Confirm delete')
+    if(confirmed){
+      setTree(prevTree => {
+        // Logic to delete a node
+        const deleteNodeRecursive = (nodes: TreeNode[]): TreeNode[] => (
+          nodes.filter(node => node.id !== nodeId)
+            .map(node => ({
+              ...node,
+              children: node.children ? deleteNodeRecursive(node.children) : []
+            }))
+        );
+        return deleteNodeRecursive(prevTree);
+      });
+    } else {
+      console.log('cancelled deletion.')
+    }
+  }, []);
 
-  // Function to handle deleting a node
-  const deleteNode = (nodeId: string) => {
-    setTree(prevTree => {
-      const deleteNodeRecursive = (nodes: TreeNode[]): TreeNode[] => (
-        nodes.filter(node => node.id !== nodeId)
-          .map(node => ({
-            ...node,
-            children: node.children ? deleteNodeRecursive(node.children) : []
-          }))
-      );
-      return deleteNodeRecursive(prevTree);
-    });
-  };
-
-  const handleDataChange = (nodeId: string, key: string, value: string) => {
+  const handleDataChange = useCallback((nodeId: string, key: string, value: string) => {
+    // Logic to handle data change
     setTree(prevTree => {
       const updateDataRecursive = (nodes: TreeNode[]): TreeNode[] => (
         nodes.map(node => {
@@ -120,7 +110,7 @@ const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
       );
       return updateDataRecursive(prevTree);
     });
-  };
+  }, []);
 
   const [newKeyValue, setNewKeyValue] = useState<{ [nodeId: string]: KeyValue }>({});
   const addKeyValuePair = (nodeId: string) => {
@@ -305,7 +295,7 @@ const TreeStructure: any = ({ id = '' }: TreeStructureProps) => {
                 </div>
               ))}
               <details>
-                <summary>Edit k/vs</summary>
+                <summary>Edit props</summary>
                 <div>
                   <input
                     type="text"
