@@ -8,7 +8,7 @@ interface KeyValue {
   value: string;
 }
 
-interface TreeNode {
+export interface TreeNode {
   id: string;
   name: string;
   children?: TreeNode[];
@@ -16,45 +16,22 @@ interface TreeNode {
   tagName?: string;
 }
 
-interface TreeStructureProps {
+export interface MyElement {
   id: string;
 }
 
-const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
+interface TreeElement extends MyElement {
+  tree: any;
+  setTree: any;
+  createNode: any;
+}
 
-const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
-  const createNode = useCallback((options: Partial<TreeNode> = {}) => ({
-    id: uuidv4(),
-    name: 'New node',
-    children: [],
-    data: [],
-    tagName: 'div',
-    ...options,
-  }), []);
+const allowedTagNames = ['main', 'div', 'span', 'p', 'section', 'aside', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
 
-  const [tree, setTree] = useState<TreeNode[]>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTreeData = localStorage.getItem('treeData' + id);
-      try {
-        return savedTreeData ? JSON.parse(savedTreeData) : [createNode({ name: 'Root node', tagName: 'Fragment' })];
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    return [createNode({ name: 'Root node', tagName: 'Fragment' })];
-  });
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('treeData' + id, JSON.stringify(tree));
-      if (tree.length === 0) {
-        setTree([createNode({ name: 'Root node', tagName: 'Fragment' })])
-      }
-    }
-  }, [tree, id]);
-
+const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, createNode }) => {
   const addNode = useCallback((parentId: string, newNode: TreeNode) => {
-    setTree(prevTree => {
+    setTree((prevTree: TreeNode[]) => {
       // Logic to add a new node
       const addNodeRecursive = (nodes: TreeNode[]): TreeNode[] => {
         return nodes.map(node => {
@@ -77,7 +54,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
   const deleteNode = useCallback((nodeId: string) => {
     const confirmed = confirm('Confirm delete')
     if (confirmed) {
-      setTree(prevTree => {
+      setTree((prevTree: TreeNode[]) => {
         // Logic to delete a node
         const deleteNodeRecursive = (nodes: TreeNode[]): TreeNode[] => (
           nodes.filter(node => node.id !== nodeId)
@@ -96,7 +73,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
   const deleteKeyValuePair = (nodeId: string, key: string) => {
     const confirmed = confirm('Confirm delete')
     if (confirmed) {
-      setTree(prevTree => {
+      setTree((prevTree: TreeNode[]) => {
         const deleteKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
           nodes.map(node => {
             if (node.id === nodeId) {
@@ -118,7 +95,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
 
   const handleDataChange = useCallback((nodeId: string, key: string, value: string) => {
     // Logic to handle data change
-    setTree(prevTree => {
+    setTree((prevTree: TreeNode[]) => {
       const updateDataRecursive = (nodes: TreeNode[]): TreeNode[] => (
         nodes.map(node => {
           if (node.id === nodeId) {
@@ -139,7 +116,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
   const addKeyValuePair = (nodeId: string) => {
     const newPair = newKeyValue[nodeId];
     if (newPair && newPair.key && newPair.value) {
-      setTree(prevTree => {
+      setTree((prevTree: TreeNode[]) => {
         const addKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
           nodes.map(node => {
             if (node.id === nodeId) {
@@ -167,7 +144,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
   };
 
   const handleNameChange = (nodeId: string, newName: string) => {
-    setTree(prevTree => {
+    setTree((prevTree: TreeNode[]) => {
       const updateNameRecursive = (nodes: TreeNode[]): TreeNode[] => (
         nodes.map(node => {
           if (node.id === nodeId) {
@@ -184,7 +161,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
   };
 
   const handleTagNameChange = (nodeId: string, newTagName: string) => {
-    setTree(prevTree => {
+    setTree((prevTree: TreeNode[]) => {
       const updateTagNameRecursive = (nodes: TreeNode[]): TreeNode[] => (
         nodes.map(node => {
           if (node.id === nodeId) {
@@ -238,7 +215,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
   };
   // Function to move a node either up or down in the tree
   const moveNode = (nodeId: string, direction: string) => {
-    setTree(currentTree => {
+    setTree((currentTree: TreeNode[]) => {
       let newTree = JSON.parse(JSON.stringify(currentTree)); // Deep copy of the tree
       const { node, parent, index } = findNodeAndParent(newTree, nodeId);
 
