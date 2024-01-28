@@ -23,7 +23,7 @@ export default function Home() {
     tagName: 'div',
     ...options,
   }), []);
-  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', tagName: 'Fragment' })]);
+  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', tagName: 'Fragment', })]);
   const id = 'willow-tree'
   const loadTree = (rootName: string) => {
     if(rootName && typeof window !== 'undefined'){
@@ -79,14 +79,3 @@ export default function Home() {
     </main>
   )
 }
-
-
-/*
-if (typeof window !== 'undefined'  && tree.length > 0) {
-      const rootName = tree[0].name
-      window.localStorage.setItem('treeData' + id +  ':' + rootName, JSON.stringify(tree));
-      if (tree.length === 0) {
-        setTree([createNode({ name: 'Root node', tagName: 'Fragment' })])
-      }
-    }
-*/

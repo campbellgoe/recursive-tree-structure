@@ -274,7 +274,7 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
               </div>
               {node.data && node.data.map(({ key, value }) => (
                 <div key={key}>
-                  {key}: <input className="text-black" type="text" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
+                  {key}: <textarea className="resize text-black" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
                   <button onClick={() => deleteKeyValuePair(node.id, key)}>Delete</button>
                 </div>
               ))}
