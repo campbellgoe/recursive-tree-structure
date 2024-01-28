@@ -31,6 +31,6 @@ ul {
   margin-left: 2ch;
 }
 
-input, select {
+input, select, textarea {
   color: black !important;
 }

@@ -26,7 +26,7 @@ interface TreeElement extends MyElement {
   createNode: any;
 }
 
-const allowedTagNames = ['main', 'div', 'span', 'p', 'section', 'aside', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
+const allowedTagNames = ['main', 'div', 'span', 'p', 'section', 'aside', 'Fragment', 'pre', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
 
 
 const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, createNode }) => {
@@ -287,8 +287,8 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
                     value={newKeyValue[node.id]?.key || ''}
                     onChange={e => handleNewKeyValueChange(node.id, 'key', e.target.value)}
                   />
-                  <input
-                    type="text"
+                  <textarea
+                    className="resize"
                     placeholder="Value"
                     value={newKeyValue[node.id]?.value || ''}
                     onChange={e => handleNewKeyValueChange(node.id, 'value', e.target.value)}
