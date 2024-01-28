@@ -1,7 +1,8 @@
 'use client';
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TreeStructure, { MyElement, TreeNode } from "./components/TreeStructure";
 import { v4 as uuidv4 } from 'uuid';
+import slugify from 'slugify'
 const listSavedTrees = ({ id = uuidv4() }: MyElement) => {
   const trees = [];
   if(typeof window != 'undefined'){
@@ -58,6 +59,17 @@ export default function Home() {
     }
   }
   const trees = useCallback(() => listSavedTrees({ id }), [id, tree])
+  // const [deployNameEdited, setDeployNameEdited] = useState(false)
+  // const [deployName, setDeployName] = useState('')
+  // useEffect(() => {
+  //   if(!deployNameEdited && tree.length){
+  //     setDeployName(tree[0].name)
+  //   }
+  // }, [tree, deployNameEdited])
+  // const deployKey = useMemo(() => `dev-${slugify(deployName.toLowerCase())}`, [deployName])
+  // const deployUrl = useMemo(() => {
+  //   return `https://www.${deployKey}.vercel.app`
+  // }, [deployKey])
   return (
     <main>
       <details>
@@ -76,6 +88,17 @@ export default function Home() {
       }}>Save Tree</button>
       
       <TreeStructure id={id} tree={tree} setTree={setTree} createNode={createNode} />
+      {/* <details>
+        <summary>Deploy</summary>
+        <div>
+          <input type="text" value={deployName} onChange={(e: any) => {
+            setDeployName(e.target.value)
+            if(!deployNameEdited) setDeployNameEdited(true)
+          }}
+        />
+        <button>Deploy to {deployUrl}</button>
+        </div>
+      </details> */}
     </main>
   )
 }
