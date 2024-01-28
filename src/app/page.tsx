@@ -19,11 +19,12 @@ export default function Home() {
     id: uuidv4(),
     name: 'New node',
     children: [],
-    data: [],
+    props: [],
     tagName: 'div',
     ...options,
   }), []);
-  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', tagName: 'Fragment', })]);
+
+  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'My first project', tagName: 'Fragment', children:[createNode(), createNode(), createNode()]})]);
   const id = 'willow-tree'
   const loadTree = (rootName: string) => {
     if(rootName && typeof window !== 'undefined'){
@@ -66,6 +67,7 @@ export default function Home() {
           <div key={treeName} className="flex gap-8">
             <button onClick={() => loadTree(treeName)}>Load {treeName}</button>
             <button onClick={() => deleteTree(treeName)}>Delete {treeName}</button>
+            <details><summary>JSON</summary><code><pre>{JSON.stringify(tree[0], null, 2)}</pre></code></details>
           </div>
         ))}
       </details>

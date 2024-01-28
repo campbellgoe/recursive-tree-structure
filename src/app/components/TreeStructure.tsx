@@ -12,7 +12,7 @@ export interface TreeNode {
   id: string;
   name: string;
   children?: TreeNode[];
-  data?: KeyValue[];
+  props?: KeyValue[];
   tagName?: string;
 }
 
@@ -77,8 +77,8 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
         const deleteKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
           nodes.map(node => {
             if (node.id === nodeId) {
-              const newData = (node.data || []).filter(d => d.key !== key);
-              return { ...node, data: newData };
+              const newData = (node.props || []).filter(d => d.key !== key);
+              return { ...node, props: newData };
             }
             if (node.children) {
               return { ...node, children: deleteKeyValuePairRecursive(node.children) };
@@ -93,14 +93,14 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
     }
   };
 
-  const handleDataChange = useCallback((nodeId: string, key: string, value: string) => {
-    // Logic to handle data change
+  const handlePropsChange = useCallback((nodeId: string, key: string, value: string) => {
+    // Logic to handle props change
     setTree((prevTree: TreeNode[]) => {
       const updateDataRecursive = (nodes: TreeNode[]): TreeNode[] => (
         nodes.map(node => {
           if (node.id === nodeId) {
-            const updatedData = (node.data || []).map(d => d.key === key ? { ...d, value } : d);
-            return { ...node, data: updatedData };
+            const updatedData = (node.props || []).map(d => d.key === key ? { ...d, value } : d);
+            return { ...node, props: updatedData };
           }
           if (node.children) {
             return { ...node, children: updateDataRecursive(node.children) };
@@ -120,8 +120,8 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
         const addKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
           nodes.map(node => {
             if (node.id === nodeId) {
-              const newData = [...(node.data || []), newPair];
-              return { ...node, data: newData };
+              const newData = [...(node.props || []), newPair];
+              return { ...node, props: newData };
             }
             if (node.children) {
               return { ...node, children: addKeyValuePairRecursive(node.children) };
@@ -182,7 +182,7 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
       <>
         {nodes.map(node => {
           const Component = node.tagName === 'Fragment' ? React.Fragment : node.tagName || 'div';
-          const props = (node.data || []).reduce((acc: any, { key, value }) => {
+          const props = (node.props || []).reduce((acc: any, { key, value }) => {
             acc[key] = value;
             return acc;
           }, {});
@@ -272,9 +272,9 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
                 <button onClick={() => deleteNode(node.id)}>Delete</button>
 
               </div>
-              {node.data && node.data.map(({ key, value }) => (
+              {node.props && node.props.map(({ key, value }) => (
                 <div key={key}>
-                  {key}: <textarea className="resize text-black" value={value} onChange={e => handleDataChange(node.id, key, e.target.value)} />
+                  {key}: <textarea className="resize text-black" value={value} onChange={e => handlePropsChange(node.id, key, e.target.value)} />
                   <button onClick={() => deleteKeyValuePair(node.id, key)}>Delete</button>
                 </div>
               ))}
