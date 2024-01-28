@@ -185,7 +185,7 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
           const Component = node.tagName === 'Fragment' ? React.Fragment : node.tagName || 'div';
           const props = (node.props || []).reduce((acc: any, { key, value, type }) => {
             let outputValue = value
-            if((value.startsWith('{{') && value.endsWith('}}'))){
+            if((value.startsWith('##') && value.endsWith('##'))){
               // WARN: eval is dangerous, warn the user not to enter unknown code into this
               outputValue = eval(value.slice(2, -2))
             }
