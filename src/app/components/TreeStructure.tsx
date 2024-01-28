@@ -6,6 +6,7 @@ import "../tailwind.output.css";
 interface KeyValue {
   key: string;
   value: string;
+  type: string;
 }
 
 export interface TreeNode {
@@ -26,7 +27,7 @@ interface TreeElement extends MyElement {
   createNode: any;
 }
 
-const allowedTagNames = ['main', 'div', 'span', 'p', 'section', 'aside', 'Fragment', 'pre', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
+const allowedTagNames = ['Fragment', 'button', 'main', 'div', 'span', 'p', 'section', 'aside', , 'pre', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
 
 
 const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, createNode }) => {
@@ -132,7 +133,7 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
         return addKeyValuePairRecursive(prevTree);
       });
       // Reset the input fields for this node
-      setNewKeyValue(prev => ({ ...prev, [nodeId]: { key: '', value: '' } }));
+      setNewKeyValue(prev => ({ ...prev, [nodeId]: { key: '', value: '', type: 'string' } }));
     }
   };
 
@@ -182,8 +183,13 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
       <>
         {nodes.map(node => {
           const Component = node.tagName === 'Fragment' ? React.Fragment : node.tagName || 'div';
-          const props = (node.props || []).reduce((acc: any, { key, value }) => {
-            acc[key] = value;
+          const props = (node.props || []).reduce((acc: any, { key, value, type }) => {
+            let outputValue = value
+            if((value.startsWith('{{') && value.endsWith('}}'))){
+              // WARN: eval is dangerous, warn the user not to enter unknown code into this
+              outputValue = eval(value.slice(2, -2))
+            }
+            acc[key] = outputValue;
             return acc;
           }, {});
 

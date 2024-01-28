@@ -24,7 +24,7 @@ export default function Home() {
     ...options,
   }), []);
 
-  const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'My first project', tagName: 'Fragment', children:[createNode(), createNode(), createNode()]})]);
+  const [tree, setTree] = useState<TreeNode[]>([{"id":"6ae7e4e2-bfcd-4c98-a074-bc53e0bf4e65","name":"My counter","children":[{"id":"ac7a9c4a-4517-4b58-adc6-a367b29f65e9","name":"New node","children":[],"props":[{"key":"children","type":"string","value":"click me"},{"key":"onClick","type":"string","value":"{{(e)=>{\nif('_myCount' in window){\nwindow._myCount ++;\n} else {\nwindow._myCount = 0\n}\nconsole.log('e', e)\ne.target.textContent = 'count '+window._myCount;\n}\n}}"}],"tagName":"button"}],"props":[],"tagName":"main"}]);
   const id = 'willow-tree'
   const loadTree = (rootName: string) => {
     if(rootName && typeof window !== 'undefined'){
@@ -61,6 +61,7 @@ export default function Home() {
   const trees = useCallback(() => listSavedTrees({ id }), [id, tree])
   return (
     <main>
+      <details><summary>Warning</summary>Do not enter unknown javascript code within {"{{}}"} brackets, it may be malicious.</details>
       <details>
         <summary>Load trees</summary>
         {trees().map(treeName => (
