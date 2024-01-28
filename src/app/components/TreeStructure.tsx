@@ -2,7 +2,7 @@
 import { useHasMounted } from '@/utils/useHasMounted';
 import React, { useEffect, useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-
+import "../tailwind.output.css";
 interface KeyValue {
   key: string;
   value: string;
@@ -20,7 +20,7 @@ interface TreeStructureProps {
   id: string;
 }
 
-const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'style'];
+const allowedTagNames = ['div', 'span', 'p', 'section', 'Fragment', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
 
 const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
   const createNode = useCallback((options: Partial<TreeNode> = {}) => ({
@@ -76,7 +76,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
 
   const deleteNode = useCallback((nodeId: string) => {
     const confirmed = confirm('Confirm delete')
-    if(confirmed){
+    if (confirmed) {
       setTree(prevTree => {
         // Logic to delete a node
         const deleteNodeRecursive = (nodes: TreeNode[]): TreeNode[] => (
@@ -92,6 +92,29 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
       console.log('cancelled deletion.')
     }
   }, []);
+
+  const deleteKeyValuePair = (nodeId: string, key: string) => {
+    const confirmed = confirm('Confirm delete')
+    if (confirmed) {
+      setTree(prevTree => {
+        const deleteKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
+          nodes.map(node => {
+            if (node.id === nodeId) {
+              const newData = (node.data || []).filter(d => d.key !== key);
+              return { ...node, data: newData };
+            }
+            if (node.children) {
+              return { ...node, children: deleteKeyValuePairRecursive(node.children) };
+            }
+            return node;
+          })
+        );
+        return deleteKeyValuePairRecursive(prevTree);
+      });
+    } else {
+      console.log('cancelled deletion.')
+    }
+  };
 
   const handleDataChange = useCallback((nodeId: string, key: string, value: string) => {
     // Logic to handle data change
@@ -189,8 +212,8 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
 
           return (
             <Component key={node.id} {...props}>
-              {node.name}
               {node.children && renderTreeAsJsx(node.children, node.id)}
+              {props?.children}
             </Component>
           );
         })}
@@ -198,23 +221,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
     );
   };
 
-  const deleteKeyValuePair = (nodeId: string, key: string) => {
-    setTree(prevTree => {
-      const deleteKeyValuePairRecursive = (nodes: TreeNode[]): TreeNode[] => (
-        nodes.map(node => {
-          if (node.id === nodeId) {
-            const newData = (node.data || []).filter(d => d.key !== key);
-            return { ...node, data: newData };
-          }
-          if (node.children) {
-            return { ...node, children: deleteKeyValuePairRecursive(node.children) };
-          }
-          return node;
-        })
-      );
-      return deleteKeyValuePairRecursive(prevTree);
-    });
-  };
+
 
   // Helper function to find a node and its parent in the tree
   const findNodeAndParent = (nodes: TreeNode[], nodeId: string, parent = null): any => {
@@ -262,7 +269,7 @@ const TreeStructure: React.FC<TreeStructureProps> = ({ id }) => {
           <div key={node.id} className={"flex flex-col border"} style={{ marginLeft: '2ch' }}>
             <details>
               <summary>
-                {node.name.length > 30 ? node.name.slice(0, 29)+"..." : node.name}
+                {node.name.length > 30 ? node.name.slice(0, 29) + "..." : node.name}
                 <div>
                   <button onClick={() => moveNode(node.id, 'up')}>&uarr;</button>
                   <button onClick={() => moveNode(node.id, 'down')}>&darr;</button>

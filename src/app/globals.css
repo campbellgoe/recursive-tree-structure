@@ -32,5 +32,5 @@ ul {
 }
 
 input, select {
-  color: black;
+  color: black !important;
 }
