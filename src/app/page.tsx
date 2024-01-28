@@ -70,7 +70,10 @@ export default function Home() {
         ))}
       </details>
 
-      <button onClick={() => saveTree(tree?.[0].name)}>Save Tree</button>
+      <button onClick={() => {
+        saveTree(tree?.[0].name)
+        alert("saved as '"+tree[0].name+"'")
+      }}>Save Tree</button>
       
       <TreeStructure id={id} tree={tree} setTree={setTree} createNode={createNode} />
     </main>
