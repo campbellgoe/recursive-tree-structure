@@ -4,10 +4,12 @@ import TreeStructure, { MyElement, TreeNode } from "./components/TreeStructure";
 import { v4 as uuidv4 } from 'uuid';
 const listSavedTrees = ({ id = uuidv4() }: MyElement) => {
   const trees = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('treeData' + id)) {
-      trees.push(key.split(':')[1]); // Extracting the root name
+  if(typeof window != 'undefined'){
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith('treeData' + id)) {
+        trees.push(key.split(':')[1]); // Extracting the root name
+      }
     }
   }
   return trees;
@@ -24,14 +26,16 @@ export default function Home() {
   const [tree, setTree] = useState<TreeNode[]>([createNode({ name: 'Root node', tagName: 'Fragment' })]);
   const id = 'willow-tree'
   const loadTree = (rootName: string) => {
-    const savedTreeData = localStorage.getItem('treeData' + id + ':' + rootName);
-    if (savedTreeData) {
-      setTree(JSON.parse(savedTreeData));
+    if(rootName && typeof window !== 'undefined'){
+      const savedTreeData = window.localStorage.getItem('treeData' + id + ':' + rootName);
+      if (savedTreeData) {
+        setTree(JSON.parse(savedTreeData));
+      }
     }
   };
   const saveTree = (saveName: string) => {
     if (saveName && typeof window !== 'undefined') {
-      localStorage.setItem('treeData' + id + ':' + saveName, JSON.stringify(tree));
+      window.localStorage.setItem('treeData' + id + ':' + saveName, JSON.stringify(tree));
     } else {
       alert('Please enter a name to save the tree');
     }
@@ -40,7 +44,7 @@ export default function Home() {
     const confirmed = confirm("Confirm delete " + deleteName)
     if (confirmed) {
       if (deleteName && typeof window !== 'undefined') {
-        localStorage.removeItem('treeData' + id + ':' + deleteName)
+        window.localStorage.removeItem('treeData' + id + ':' + deleteName)
         setTree((tree: TreeNode[]) => {
           
           if(tree[0].name === deleteName){
@@ -59,7 +63,7 @@ export default function Home() {
       <details>
         <summary>Load trees</summary>
         {trees().map(treeName => (
-          <div className="flex gap-8">
+          <div key={treeName} className="flex gap-8">
             <button onClick={() => loadTree(treeName)}>Load {treeName}</button>
             <button onClick={() => deleteTree(treeName)}>Delete {treeName}</button>
           </div>
@@ -77,7 +81,7 @@ export default function Home() {
 /*
 if (typeof window !== 'undefined'  && tree.length > 0) {
       const rootName = tree[0].name
-      localStorage.setItem('treeData' + id +  ':' + rootName, JSON.stringify(tree));
+      window.localStorage.setItem('treeData' + id +  ':' + rootName, JSON.stringify(tree));
       if (tree.length === 0) {
         setTree([createNode({ name: 'Root node', tagName: 'Fragment' })])
       }
