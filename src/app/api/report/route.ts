@@ -1,3 +1,4 @@
+import util from 'util'
 const headers = {
   "Authorization": "Bearer "+process.env.MAIN_TOKEN
 }
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
     method: 'get'
   })
   const projects = await listOfProjects.json()
-  console.log('projects:', projects)
+  console.log('projects:', util.inspect(projects))
   // const listOfDeployments = await fetch(`https://api.vercel.com/v6/deployments?app=docs&from=${from}&limit=${limit}&projectId=QmXGTs7mvAMMC7WW5ebrM33qKG32QK3h4vmQMjmY&rollbackCandidate=true&since=1540095775941&state=BUILDING,READY&target=production&teamId=SOME_STRING_VALUE&to=1612948664566&until=1540095775951&users=kr1PsOIzqEL5Xg6M4VZcZosf,K4amb7K9dAt5R2vBJWF32bmY`, {
   //   headers,
   //   method: "get"

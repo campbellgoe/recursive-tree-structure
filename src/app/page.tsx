@@ -82,7 +82,7 @@ export default function Home() {
       
       <Suspense fallback={<div>Loading...</div>}>
         <TreeStructure id={id} tree={tree} setTree={setTree} createNode={createNode} renderType="both"/>
-        <Deploy tree={tree} treeProps={{ setTree, createNode }} /> 
+        {/* <Deploy tree={tree} treeProps={{ setTree, createNode }} />  */}
       </Suspense>
     </main>
   )
