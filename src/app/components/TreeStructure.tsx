@@ -1,6 +1,6 @@
 'use client';
 import { useHasMounted } from '@/utils/useHasMounted';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import "../tailwind.output.css";
 interface KeyValue {
@@ -21,16 +21,22 @@ export interface MyElement {
   id: string;
 }
 
-interface TreeElement extends MyElement {
-  tree: any;
-  setTree: any;
-  createNode: any;
-}
-
 const allowedTagNames = ['Fragment', 'button', 'main', 'div', 'span', 'p', 'section', 'aside', , 'pre', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'];
 
+type TreeStructureProps = {
+  id: string,
+  tree: TreeNode[],
+  setTree: any,
+  createNode: (a: any) => any,
+  renderType: 'both' | 'editable' | 'jsx',
+  onUpdateTree?: (refValue: HTMLElement | null, tree: TreeNode[]) => any;
+}
 
-const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, createNode }) => {
+const TreeStructure = ({ id = uuidv4(), tree, setTree, createNode, renderType, onUpdateTree }: TreeStructureProps) => {
+  const ref = useRef(null)
+  useEffect(() => {
+    onUpdateTree?.(ref.current, tree)
+  }, [tree])
   const addNode = useCallback((parentId: string, newNode: TreeNode) => {
     setTree((prevTree: TreeNode[]) => {
       // Logic to add a new node
@@ -314,14 +320,18 @@ const TreeStructure: React.FC<TreeElement> = ({ id = uuidv4(), tree, setTree, cr
     </>
   );
   const mounted = useHasMounted()
-  return mounted ? (<div><section>
-    {renderEditableTree(tree)}
-  </section>
-    <br />
-    <section>
-      {renderTreeAsJsx(tree)}
+  const map = {
+    both: (<div><section>
+      {renderEditableTree(tree)}
     </section>
-  </div>) : (<div>Loading...</div>)
-};
-
+      <br />
+      <section>
+        {renderTreeAsJsx(tree)}
+      </section>
+    </div>),
+    editable: renderEditableTree(tree),
+    jsx: renderTreeAsJsx(tree),
+  }
+  return mounted ? <div ref={ref}>{map[renderType]}</div>: (<div>Loading...</div>)
+}
 export default TreeStructure;
