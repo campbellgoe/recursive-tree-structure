@@ -1,7 +1,8 @@
 'use client';
-import { useCallback, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import TreeStructure, { MyElement, TreeNode } from "./components/TreeStructure";
 import { v4 as uuidv4 } from 'uuid';
+import Deploy from "./components/Deploy";
 const listSavedTrees = ({ id = uuidv4() }: MyElement) => {
   const trees = [];
   if(typeof window != 'undefined'){
@@ -78,7 +79,11 @@ export default function Home() {
         alert("saved as '"+tree[0].name+"'")
       }}>Save Tree</button>
       
-      <TreeStructure id={id} tree={tree} setTree={setTree} createNode={createNode} />
+      
+      <Suspense fallback={<div>Loading...</div>}>
+        <TreeStructure id={id} tree={tree} setTree={setTree} createNode={createNode} renderType="both"/>
+        {/* <Deploy tree={tree} treeProps={{ setTree, createNode }} />  */}
+      </Suspense>
     </main>
   )
 }
