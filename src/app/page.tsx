@@ -61,7 +61,7 @@ export default function Home() {
   const trees = useCallback(() => listSavedTrees({ id }), [id, tree])
   return (
     <main>
-      <details><summary>Warning</summary>Do not enter unknown javascript code within {"##code-goes-here##"} brackets, it may be malicious.</details>
+      <details><summary>Warning</summary>Do not enter unknown javascript code within {"##code-goes-here##"}, it may be malicious.</details>
       <details>
         <summary>Load trees</summary>
         {trees().map(treeName => (
